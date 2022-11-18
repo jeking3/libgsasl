@@ -59,6 +59,13 @@ static void slidebits(unsigned char *keybuf, unsigned char *inbuf)
     keybuf[7] = (inbuf[6]<<1);
 }
 
+#if defined(OPENSSL_IS_AWSLC)
+#define DES_key_sched DES_set_key
+#define IVEC_BYTESOF(_IV) ((_IV).bytes)
+#else
+#define IVEC_BYTESOF(_IV) (_IV)
+#endif
+
 int digest_md5_crypt_init(_Gsasl_digest_md5_encrypt_state *state)
 {
 
@@ -90,7 +97,7 @@ int digest_md5_crypt_init(_Gsasl_digest_md5_encrypt_state *state)
             slidebits(keybuf, my_key + 7);
 
             DES_key_sched((DES_cblock *) keybuf, &state->keysched2_encrypt);
-            memcpy(state->ivec_encrypt, ((char *) my_key) + 8, 8);
+            memcpy(IVEC_BYTESOF(state->ivec_encrypt), ((char *) my_key) + 8, 8);
 
             slidebits(keybuf, peer_key);
             DES_key_sched((DES_cblock *) keybuf, &state->keysched_decrypt);
@@ -100,7 +107,7 @@ int digest_md5_crypt_init(_Gsasl_digest_md5_encrypt_state *state)
             DES_key_sched((DES_cblock *) keybuf, &state->keysched2_decrypt);
 
 
-            memcpy(state->ivec_decrypt, ((char *) peer_key) + 8, 8);
+            memcpy(IVEC_BYTESOF(state->ivec_decrypt), ((char *) peer_key) + 8, 8);
 
 
          } else if (state->cipher == DIGEST_MD5_CIPHER_DES) {
@@ -110,12 +117,12 @@ int digest_md5_crypt_init(_Gsasl_digest_md5_encrypt_state *state)
 
             DES_key_sched((DES_cblock *) keybuf, &state->keysched_encrypt);
 
-            memcpy(state->ivec_encrypt, ((char *) my_key) + 8, 8);
+            memcpy(IVEC_BYTESOF(state->ivec_encrypt), ((char *) my_key) + 8, 8);
 
             slidebits(keybuf, peer_key);
             DES_key_sched((DES_cblock *) keybuf, &state->keysched_decrypt);
 
-            memcpy(state->ivec_decrypt, ((char *) peer_key) + 8, 8);
+            memcpy(IVEC_BYTESOF(state->ivec_decrypt), ((char *) peer_key) + 8, 8);
          }
 
     } else {
